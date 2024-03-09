@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-api
+spec:
+  type: LoadBalancer
+  selector:
+    service: analytics-api
+  ports:
+  - name: "5153"
+    protocol: TCP
+    port: 5153
+    targetPort: 5153
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-api
+  labels:
+    name: analytics-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: analytics-api
+  template:
+    metadata:
+      labels:
+        service: analytics-api
+    spec:
+      containers:
+      - name: analytics-api
+        image: 830377535004.dkr.ecr.us-west-2.amazonaws.com/test-coworking-analytics:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /health_check
+            port: 5153
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: "/readiness_check"
+            port: 5153
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        env:
+        - name: DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: demo-postgres-postgresql-env
+              key: DB_USERNAME
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: demo-postgres-postgresql-secret
+              key: DB_PASSWORD
+        - name: DB_HOST
+          value: demo-postgres-postgresql
+      restartPolicy: Always

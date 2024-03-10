@@ -67,7 +67,7 @@ Please note that steps described below assumes that the provided code and struct
         export DB_HOST=127.0.0.1 <br>
         export DB_PORT=5433 \# later used to access port with port forwarding <br>
         export DB_NAME=postgres <br>
-    Now launch the app in the same terminal, here it is assumes that launching app locally works while launching from analytics directory:
+    Now launch the app in the same terminal, here it is assumed that launching app locally works while launching from analytics directory:
 
         python app.py
 
@@ -84,7 +84,7 @@ Please note that steps described below assumes that the provided code and struct
 
     
     
-    Now in this terminal issue the following commands using helm to setup Postgresql on K8s in EKS. Navigate to db directory. Note the parameters used for seting-up postgresql on eks. Some of the parameters mentioned in the shell script are resources that must be provisioned before running the script. Moreover, take not on the variables used as these variables are necessary to log into the postgresql running inside the pod. Follow the instruction output as populated in "helm_instruction_output.txt". <br>
+    Now in this terminal issue the following commands using helm to setup Postgresql on K8s in EKS. Navigate to db directory. Note the parameters used for seting-up postgresql on eks. Some of the parameters mentioned in the shell script are resources that must be provisioned before running the script. Moreover, examine the variables used, as these variables are necessary to log into the postgresql running inside the pod. Follow the instruction output as populated in "helm_instruction_output.txt". <br>
 
         bash helm_postgresql.sh  
 

@@ -73,7 +73,7 @@ Please note that steps described below assumes that the provided code and struct
 
     
        
-    e. Now in another terminal, navigate to deployments and apply in the kubectl in the following order. The decribe deployment will setup volume and volume claim for Postgresql. <br>
+    e. Now in another terminal, navigate to deployments and apply resource specification files using kubectl in the following order. The decribe deployments will setup volume and volume claim for Postgresql. <br>
         
         kubectl apply -f pv.yaml
         kubectl apply -f pvc.yaml    
@@ -84,10 +84,42 @@ Please note that steps described below assumes that the provided code and struct
 
     
     
-    Now in this terminal issue the following commands using helm to setup Postgresql on K8s in EKS. Navigate to db directory. <br>
+    Now in this terminal issue the following commands using helm to setup Postgresql on K8s in EKS. Navigate to db directory. Note the parameters used for seting-up postgresql on eks. Some of the parameters mentioned in the shell script are resources that must be provisioned before running the script. Moreover, take not on the variables used as these variables are necceary to log into the postgresql running inside the pod. Follow the instruction output as populated in "helm_instruction_output.txt". <br>
 
-        bash helm_post  
+        bash helm_postgresql.sh  
 
+    Most important instructions to follow is to setup local port-forwarding as an example:
+
+        kubectl port-forward --namespace default svc/demo-postgres-postgresql 5432:5432 &
+
+    In the same terminal, while in db directory:
+
+        export POSTGRES_PASSWORD=$(kubectl get secret --namespace default demo-postgres-postgresql -o jsonpath="{.data.password}" | base64 -d)
+
+        export PGPASSWORD="$POSTGRES_PASSWORD"
+
+        PGPASSWORD=$POSTGRES_PASSWORD psql --host localhost -U postgresuser -d postgres -p 5432 < <sql scripts one after the other>
+
+3. Steps describe in step 2 will setup postregsql running on the eks cluster with specified data as described in sql files in db folder. In another terminal issue the following commands to test endpoint APIs locally in the analytics app. The examples here are provided as examples.
+
+    Install httpie locally then issue
+    http GET localhost:5153/readiness_check
+    
+    or install curl then issue
+
+    curl -iX localhost:5153/readiness_check
+
+4. Once the endpoints in the analytics app return http 200 code. This is the time to build docker image of the app and push that to the ECR. Note at this point analytics app has not been deployed in the cluster. Follow the instruction provided in ECR repo with "view push commands". <br> 
+Find view push commands <br> ![ECR](/screenshots/docker_images_ecr_app.png "view push commands")
+Copy the container URI provided, and paste this URI as image value under container section of the analytics-api.yaml. Now issue the following commands, while in root of the project:
+    
+    kubectl apply -f deployments/
+
+    This will create resouces(k8s pods), services. At this point the output should look like this as an example: <br>
+    ![kubectl cli](/screenshots/kubectl_get_svc_app.png "kubectl get svc")
+
+5. Lastly, to check if coworking service as desired viewing the logs in cloudwatch is indispensible. <br>
+![AWS CloudWatch](/screenshots/app_endpoints_logs_cloudwatch.png "app endpoint output as cloud logs")
 
 
 

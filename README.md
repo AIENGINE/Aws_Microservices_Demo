@@ -16,6 +16,7 @@ The workspace requirements mentioned below are to setup appropriate software for
 
 
 # Setup requirements to build Coworking Space Service Extension (Microservices) with CI and CD pipelines
+
 **AWS Cli v2+:** Amazon AWS latest cli is recommended to build and deploy CI and CD pipelines on AWS Cloud. <br>
 **AWS ECR(Elastic Container Registry):** ECR is necessary to keep dockerized flask app in AWS cloud. The artifacts in the ECR are then consumed by resources in EKS. <br>
 **AWS Codebuild:** Codebuild is used to build CI pipeline. Codebuild configuration references repo from github, build the artifacts and docker container and pushes it to ECR. <br>
@@ -34,17 +35,58 @@ app container in ECR->EKS->expose function endpoints in back-end->consume functi
 
 # Coworking Space Service Extension deployments steps
 
-The following directories are provided for building coworking space service which includes building of analytics app: <br>
+The following directories are provided for building coworking space service which includes building of analytics app. At this point it is assumed that AWS account has been setup and neccessary SW tools as mentioned above are installed. Furthermore, it is assumed that user has necessary know-how of various AWS services including IAM, setting up aws cli and kubectl client for managing k8s in the cloud, lastly basic understand of helm package manager: <br>
 **/analytics:** actual app in coworking space serivce which exposes neccessary endpoints to access business logic. <br>
 **/db:** Sql scripts to ingest or seed data into the created database with the specified schema <br>
 **/deployments:** Contains services and deployments scripts for resources in the AWS cloud (EKS). The scripts are deployed using kubectl. The cloud resources such as EC2 machines which are provisioned inside cluster and neccassary communication services such as API access through defined ports that is required to build coworking space service is created using these scripts. <br>
 **/:** Root of the project contains buildspec.yaml that triggers build on PR creation. Root also has dockerfile that dockerize the analytics app in analytics directory. <br>
 
-Please note that steps describe below assumes that the provided code and structure to build coworking space as described above is already in the github. Now the steps to build coworking service are as follows: <br>
+Please note that steps described below assumes that the provided code and structure to build coworking space service as described above is already in the github. Now the steps to build coworking service are as follows: <br>
 
 1. Pull the provided repo to build coworking service locally using git. <br>
-2. Before building docker image as specified in the root directory 
+2. Before building docker image from the dockerfile as specified in the root directory, five steps has to be performed: <br>
+    a. Provision resources on EKS using aws cli, kubetcl cli, eks management console and IAM management console in the browser. This is done as follows:<br>
+    Navigate to EKS to create cluster. Use Add Cluster from the management console. Here  cluster service role is required to be created before cluster is successfuly provisioned for nodegroups. So, for that navigate to IAM management console in the browser. In roles section create a role for cluster e.g. demo-eks-cluster-role which has AmazonEKSClusterPolicy. The steps can be followed as given in official aws docs. Please note that every provisioned resource in AWS is specified in the specific region e.g. here us-west-2 is assumed. <br>
 
+    Once cluster is created. From the created cluster management console in EKS, create nodegroups to hold nodes for running workloads. From add node group create node group as before a necceassry role is required to created here before machines are successfuly provisioned to take workloads. Navigate to IAM roles create a role as an example eks-node-role with the following policies: AmazonEC2ContainerRegistryReadOnly, AmazonEKS_CNI_Policy, AmazonEKSWorkerNodePolicy, AmazonEMRReadOnlyAccessPolicy_v2, AWSXrayWriteOnlyAccess, CloudWatchAgentServerPolicy. <br>
+    
+    Please follow official aws documentation to correctly follow every step. The steps to follow help are provided using official links along setting up the node group. Selection of appropriate machine specs are necceassary in this step, as this will allow provisioning of workloads in a cost effective manner. Here, as an example t3a type instances were chosen, as the workloads pushed in the ECR build type are of x86_64. <br> 
+
+    At this point local aws cli is configured correctly using aws configure with profile credentials. And below kubectl command returns the name of the cluster. <br>
+
+        kubectl config current-context
+
+    b. Setup private container registery in ECR to hold containers pushed from local work space. This can be done from aws amazon elastic container registry console in the the browser.
+
+    c. Create aws codebuild project from Codebuild console in the browser. Few important considerations while setting-up the codebuild project: use of buildspec file, webhook on PR creation, setting up the variables used in the buildspec file and most importantly privilege option to build container so that build images can be pushed to specified ECR repo.
+    
+    d. Running the app locally. The steps are setting up the environment vars used in the app. <br>
+        
+        export DB_USERNAME=postgres <br>
+        export DB_PASSWORD=${POSTGRES_PASSWORD} <br>
+        export DB_HOST=127.0.0.1 <br>
+        export DB_PORT=5433 \# later used to access port with port forwarding <br>
+        export DB_NAME=postgres <br>
+    Now launch the app in the same terminal, here it is assumes that launching app locally works while launching from analytics directory:
+
+        python app.py
+
+    
+       
+    e. Now in another terminal, navigate to deployments and apply in the kubectl in the following order. The decribe deployment will setup volume and volume claim for Postgresql. <br>
+        
+        kubectl apply -f pv.yaml
+        kubectl apply -f pvc.yaml    
+
+    Check with the following command. The command should return postgresql-pvc as per pvc.yaml definition with storage class gp2 and 1Gi capacity:
+
+        kubectl pvc get
+
+    
+    
+    Now in this terminal issue the following commands using helm to setup Postgresql on K8s in EKS. Navigate to db directory. <br>
+
+        bash helm_post  
 
 
 

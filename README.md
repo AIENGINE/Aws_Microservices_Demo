@@ -32,13 +32,18 @@ local_app->github_repo->codebuild->ecr <br>
 CD pipeline starts from consuming the image from ECR in EKS. EKS allows to deploy the apps in production or tests before production using Microservices architecture. As describe already microcservices address separation of concerns principle and in the current implementation database service and application service are deployed separately with intra and inter communication takes place through defined end-points. This way every application can scale on its own terms with minimal depedency impact. Typical CD through EKS looks like this: <br>
 app container in ECR->EKS->expose function endpoints in back-end->consume function endpoints in app front-end <br>
 
-# Analytics app deployments steps
+# Coworking Space Service Extension deployments steps
 
-1. The following directories are provided for building Coworking space service which build analytics app: <br>
-**/analytics:** actual app (Coworking space serivce a.k.a analytics app in the project) with endpoints exposed to access business logic <br>
-**/db:** Sql scripts to ingest or seed data into the created database with specified schema <br>
-**/deployments:** Contains services and deployments scripts for resources in the AWS cloud (EKS). The scripts are deployed using kubectl. <br>
+The following directories are provided for building coworking space service which includes building of analytics app: <br>
+**/analytics:** actual app in coworking space serivce which exposes neccessary endpoints to access business logic. <br>
+**/db:** Sql scripts to ingest or seed data into the created database with the specified schema <br>
+**/deployments:** Contains services and deployments scripts for resources in the AWS cloud (EKS). The scripts are deployed using kubectl. The cloud resources such as EC2 machines which are provisioned inside cluster and neccassary communication services such as API access through defined ports that is required to build coworking space service is created using these scripts. <br>
 **/:** Root of the project contains buildspec.yaml that triggers build on PR creation. Root also has dockerfile that dockerize the analytics app in analytics directory. <br>
+
+Please note that steps describe below assumes that the provided code and structure to build coworking space as described above is already in the github. Now the steps to build coworking service are as follows: <br>
+
+1. Pull the provided repo to build coworking service locally using git. <br>
+2. Before building docker image as specified in the root directory 
 
 
 
